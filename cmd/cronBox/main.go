@@ -5,11 +5,16 @@ import (
 	"cronBox/logger"
 	"cronBox/parser"
 	"cronBox/scheduler"
+
+	"flag"
 	"fmt"
 )
 
 func main() {
-	jobs, err := parser.ParseConfig("config.json")
+	var configPath = flag.String("config", "config.json", "Path to the configuration file")
+	flag.Parse()
+
+	jobs, err := parser.ParseConfig(*configPath)
 
 	if err != nil {
 		fmt.Printf("%v\n", err)
@@ -18,7 +23,7 @@ func main() {
 
 	fmt.Println("Parsed jobs:")
 	for _, job := range jobs {
-		fmt.Printf("- %s\n", job)
+		fmt.Printf("%s\n", job)
 	}
 
 	executor := executor.New()
@@ -30,7 +35,6 @@ func main() {
 	}
 
 	scheduler := scheduler.New(executor, logger)
-
 	scheduler.AddJobs(jobs)
 	scheduler.Start()
 

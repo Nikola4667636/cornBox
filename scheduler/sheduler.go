@@ -31,9 +31,11 @@ func New(executor Executor, logger Logger) *Scheduler {
 	}
 }
 
+// CWE-252
 func (s *Scheduler) AddJobs(jobs []domain.Job) error {
 	for _, job := range jobs {
 		job := job
+		// CWE-400
 		_, err := s.cron.AddFunc(
 			job.Schedule,
 			func() {

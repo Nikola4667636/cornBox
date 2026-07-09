@@ -13,6 +13,7 @@ type Logger struct {
 }
 
 func New(path string) (*Logger, error) {
+	// CWE-732
 	file, err := os.OpenFile(
 		path,
 		os.O_APPEND|os.O_CREATE|os.O_WRONLY,
@@ -28,27 +29,20 @@ func New(path string) (*Logger, error) {
 }
 
 func (l *Logger) Log(result domain.Result) error {
-
 	status := "SUCCESS"
-
 	if result.Error != nil {
 		status = "FAILED"
 	}
-
+	// CWE-117
 	message := fmt.Sprintf(
 		`
 ==============================
 TIME: %s
 COMMAND: %s
 STATUS: %s
-
-OUTPUT:
-%s
-
-ERROR:
-%v
+OUTPUT: %s
+ERROR: %v
 ==============================
-
 `,
 		time.Now().Format(time.RFC3339),
 		result.Command,
