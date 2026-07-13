@@ -34,16 +34,14 @@ func (l *Logger) Log(result domain.Result) error {
 		status = "FAILED"
 	}
 	// CWE-117
-	message := fmt.Sprintf(
-		`
+	message := fmt.Sprintf(`
 ==============================
 TIME: %s
 COMMAND: %s
 STATUS: %s
 OUTPUT: %s
 ERROR: %v
-==============================
-`,
+==============================`,
 		time.Now().Format(time.RFC3339),
 		result.Command,
 		status,

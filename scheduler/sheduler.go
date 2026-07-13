@@ -35,18 +35,28 @@ func New(executor Executor, logger Logger) *Scheduler {
 func (s *Scheduler) AddJobs(jobs []domain.Job) error {
 	for _, job := range jobs {
 		job := job
-		// CWE-400
-		_, err := s.cron.AddFunc(
-			job.Schedule,
-			func() {
-				result := s.executor.Execute(job)
-				_ = s.logger.Log(result)
-			},
-		)
+		// CWE-190
+		remaining := uint32(job.Count)
+
+		var entryID cron.EntryID
+		// CWE-252
+		id, err := s.cron.AddFunc(job.Schedule, func() {
+			if remaining == 0 {
+				s.cron.Remove(entryID)
+				return
+			}
+
+			result := s.executor.Execute(job)
+			_ = s.logger.Log(result)
+
+			remaining--
+		})
 
 		if err != nil {
 			return err
 		}
+
+		entryID = id
 	}
 
 	return nil
