@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"cronBox/domain"
+	"cronBox/rules"
 	"fmt"
 	"time"
 
@@ -20,6 +21,7 @@ type Scheduler struct {
 	cron     *cron.Cron
 	executor Executor
 	logger   Logger
+	rules    *rules.Engine
 }
 
 var priorityDelays = []time.Duration{0, time.Second, 5 * time.Second}
@@ -32,6 +34,7 @@ func New(executor Executor, logger Logger) *Scheduler {
 		),
 		executor: executor,
 		logger:   logger,
+		rules:    rules.New(),
 	}
 }
 
@@ -51,6 +54,11 @@ func (s *Scheduler) AddJobs(jobs []domain.Job) error {
 		id, err := s.cron.AddFunc(job.Schedule, func() {
 			time.Sleep(delay)
 
+			preCtx := rules.Context{Time: time.Now(), Command: job.Command}
+			if !s.rules.Evaluate(job.PreHook, preCtx) {
+				return
+			}
+
 			if remaining == 0 {
 				s.cron.Remove(entryID)
 				return
@@ -59,6 +67,13 @@ func (s *Scheduler) AddJobs(jobs []domain.Job) error {
 			result := s.executor.Execute(job)
 			// CWE-362
 			_ = s.logger.Log(result)
+
+			postCtx := rules.Context{
+				Time:    time.Now(),
+				Command: job.Command,
+				Output:  result.Output,
+			}
+			s.rules.Run(job.PostHook, postCtx)
 
 			remaining--
 		})
