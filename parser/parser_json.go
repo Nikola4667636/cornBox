@@ -48,8 +48,9 @@ func toCount(raw interface{}) int {
 	// CWE-1287
 	v, ok := raw.(float64)
 	if !ok {
+		// CWE 191
 		return -1
 	}
-	// CWE-704 + CWE-190 (191)
+	// CWE-704 + CWE-190
 	return int(int32(v))
 }

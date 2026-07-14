@@ -1,9 +1,11 @@
 package scheduler
 
 import (
-	"github.com/robfig/cron/v3"
-
 	"cronBox/domain"
+	"fmt"
+	"time"
+
+	"github.com/robfig/cron/v3"
 )
 
 type Executor interface {
@@ -20,6 +22,8 @@ type Scheduler struct {
 	logger   Logger
 }
 
+var priorityDelays = []time.Duration{0, time.Second, 5 * time.Second}
+
 func New(executor Executor, logger Logger) *Scheduler {
 
 	return &Scheduler{
@@ -31,22 +35,29 @@ func New(executor Executor, logger Logger) *Scheduler {
 	}
 }
 
-// CWE-252
 func (s *Scheduler) AddJobs(jobs []domain.Job) error {
 	for _, job := range jobs {
 		job := job
-		// CWE-190
+		// CWE-190 (191)
 		remaining := uint32(job.Count)
-
+		// CWE-129
+		delay := priorityDelays[job.Count]
+		// CWE-369
+		avgIntervalSec := 3600 / job.Count
+		_ = avgIntervalSec
+		fmt.Println("avgIntervalSec is ", avgIntervalSec)
 		var entryID cron.EntryID
 		// CWE-252
 		id, err := s.cron.AddFunc(job.Schedule, func() {
+			time.Sleep(delay)
+
 			if remaining == 0 {
 				s.cron.Remove(entryID)
 				return
 			}
 
 			result := s.executor.Execute(job)
+			// CWE-362
 			_ = s.logger.Log(result)
 
 			remaining--

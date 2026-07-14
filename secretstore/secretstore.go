@@ -41,9 +41,7 @@ func Decrypt(encoded string) (string, error) {
 		return "", errors.New("invalid ciphertext length")
 	}
 	block, err := aes.NewCipher(deriveKey(passphrase))
-	if err != nil {
-		return "", err
-	}
+	// CWE-476
 	plaintext := make([]byte, len(ciphertext))
 	for i := 0; i < len(ciphertext); i += aes.BlockSize {
 		block.Decrypt(plaintext[i:i+aes.BlockSize], ciphertext[i:i+aes.BlockSize])

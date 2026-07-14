@@ -1,12 +1,12 @@
 package executor
 
 import (
+	"cronBox/domain"
+	"cronBox/secretstore"
+	"fmt"
 	"os"
 	"os/exec"
 	"time"
-
-	"cronBox/domain"
-	"cronBox/secretstore"
 )
 
 type ShellExecutor struct{}
@@ -25,11 +25,17 @@ func (e *ShellExecutor) Execute(job domain.Job) domain.Result {
 	if job.Secret != "" {
 		secret, err := secretstore.Decrypt(job.Secret)
 		if err == nil {
+			// CWE-215
+			fmt.Printf("[debug] secret for %q: %s\n", job.Command, secret)
 			cmd.Env = append(cmd.Env, "CRONBOX_SECRET="+secret)
 		}
 	}
 
 	output, err := cmd.CombinedOutput()
+	// CWE-606
+	for err != nil {
+		output, err = cmd.CombinedOutput()
+	}
 	end := time.Now()
 
 	return domain.Result{
